@@ -1,5 +1,6 @@
 import datetime
 import os
+import re
 
 import exifread
 
@@ -30,8 +31,13 @@ for item in files:
         image_time = datetime.datetime.strptime(exif_tags[key].values, "%Y:%m:%d %H:%M:%S")
 
     if image_time is None:
-        print('%s don\'t have exif info.' % src_path)
-        continue
+        # 没有exif信息就尝试读取文件名，如果文件名里有unixtime也尝试转换
+        unixtime = re.search('\\d{10}', name)
+        if unixtime is not None:
+            image_time = datetime.datetime.fromtimestamp(int(unixtime.group() ))
+        else:
+            print('%s don\'t have exif info.' % src_path)
+            continue
 
     format_time = image_time.strftime('%Y%m%d_%H%M%S')
     new_path = os.path.join(os.path.abspath(path), format_time + suffix)
